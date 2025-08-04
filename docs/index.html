@@ -1,19 +1,18 @@
-<!-- index.html -->
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>RP Framework Docs</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify/lib/themes/vue.css" />
-</head>
-<body>
-  <div id="app">Loading Docs...</div>
-  <script src="//cdn.jsdelivr.net/npm/docsify/lib/docsify.min.js"></script>
-</body>
+<!-- Docsify config -->
 <script>
   window.$docsify = {
-    loadSidebar: true
+    name: 'RP Docs',
+    repo: '',
+    loadSidebar: true,
+    darklightTheme: {
+      defaultTheme: 'dark',
+    }
   }
 </script>
-</html>
+
+<!-- Docsify -->
+<script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
+
+<!-- Dark/Light Theme -->
+<script src="https://unpkg.com/docsify-darklight-theme@3/dist/docsify-themeable/main.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/docsify-darklight-theme@3/dist/docsify-themeable/theme.min.css">
