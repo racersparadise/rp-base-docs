@@ -3,8 +3,8 @@
 Shared base object
 
 ## Modules
-- [Util](rp_server?id=util)
-- [Log](rp_server?id=log)
+- [Util](rp_shared?id=util)
+- [Log](rp_shared?id=log)
 
 ## RP
 

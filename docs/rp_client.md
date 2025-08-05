@@ -47,8 +47,8 @@ Base shared object
 - Can't be written to
 
 ## Modules
-- [Util](rp_client?id=util)
-- [Log](rp_client?id=log)
+- [Util](rp_shared?id=util)
+- [Log](rp_shared?id=log)
 - [Blips](rp_client?id=blips)
 - [Converts](rp_client?id=converts)
 
