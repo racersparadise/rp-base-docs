@@ -13,6 +13,7 @@ Base shared object
 |`heading`    |number    | Player's heading                |
 |`accounts`   |table     | Player's accounts (currency)    |
 |`metadata`   |table     | Player's metadata               |
+|`nickname`   |string    | Player's nickname               |
 |`identifier` |string    | Player's identifier             |
 |`group`      |string    | Player's permission group       |
 |`xp`         |number    | Player's XP                     |
@@ -55,8 +56,6 @@ Base shared object
 - `RP.TriggerServerCallback(name, cb, ...)` - Triggers a server callback
 - `RP.Teleport(x, y, z, heading?)` or `RP.Teleport(coords, heading?)` - Teleports the player
 - `RP.GetPlayerRank()` - Gets the player's rank from XP
-- `RP.GetLevelFromXP(xp)` - Gets the level from XP
-- `RP.GetXPFromLevel(level)` - Gets the XP from level
 - `RP.RequestModel(modelHash: number|string, cb?)` - Requests a model and calls the cb function if provided
 -- cb here is useless, it always blocks idk what i was thinking
 - `RP.RequestStreamedTextureDict(dict, cb?)` - Streams a texture dict and calls the callback function if provided
@@ -121,24 +120,6 @@ Base shared object
 -- `duration` - ms
 -- Not implemented
 
-## Util
-- `RP.Util.RoundFloat(number, precision)` - Rounds a number to the specified number of digits after the floating point
-- `RP.Util.RandomString(length)` - Generates a random string with specified length
-- `RP.Util.GroupDigits(number)` - Formats a number with commas
-- `RP.Util.GetDistance(pos1, pos2, useZ)` - Gets distance between coords
--- `useZ` - Wether to use Z (height) or not, if set to false or not provided, it will check in a cylinder rather than a sphere
--- Probably slow, use direct calculations
-- `RP.Util.Trim(string)` - Trims whitespace from a string
-
-## Log
-- `RP.Log.info(...)` - Logs an info message
-- `RP.Log.warning(...)` - Logs a warning message
-- `RP.Log.error(...)` - Logs an error message
-- `RP.Log.debug(...)` - Logs a debug message
--- Only shows if debug is true
-- `RP.Log.custom(...)` - Logs a custom message
--- Prints "[resource_name] ...`
-
 ## Blips
 - `RP.Blips.SetBlipInfoTitle(blip, title, rockstarVerified)` - Sets the blip's title and rockstar icon
 - `RP.Blips.SetBlipInfoImage(blip, dict, texture)` - Sets the blip's image
@@ -158,3 +139,16 @@ Base shared object
 -- `distance` - Preferred distance from `DistanceToPreferred`
 -- `longUnit` - true/false, if true will use longer units (m->meter(s), ft->(foot/feet))
 -- `precision` - How many numbers to keep after the floating point
+
+## Events
+- `rp-base:setGroup` - Gets triggered when the user's group changes
+-- Networked
+-- function(group)
+- `rp-base:playerLoaded` - Gets triggered when the player object loads
+-- Networked
+-- function(player: table)
+-- this only gives identifier, group and pid
+- `rp-notify:notify` - Show a notification
+-- `msg` - the notification
+-- `duration` - duration in ms
+-- Not implemented in base

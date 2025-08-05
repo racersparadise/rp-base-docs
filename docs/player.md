@@ -7,11 +7,12 @@ Represents a connected player on the server.
 | Name        | Type     | Description                     |
 |-------------|----------|---------------------------------|
 | `source`    | number   | Player's server ID              |
-| `identifier`| string   | Player's identifier                |
+| `identifier`| string   | Player's identifier             |
 | `pid`       | number   | Player's database ID            |
 | `group`     | string   | Player's permission group       |
 | `coords`    | vector3  | Player's position (getter/setter) |
 | `name`      | string   | Player's name                   |
+| `nickname`  | string   | Player's nickname               |
 | `metadata`  | table    | Metadata object (RCMetadata)    |
 | `accounts`  | table    | Currency/accounts (RCAccounts)  |
 | `xp`        | number   | Player's experience             |
