@@ -51,17 +51,25 @@ Base shared object
 - [Log](rp_shared?id=log)
 - [Blips](rp_client?id=blips)
 - [Converts](rp_client?id=converts)
+- [PedController](rp_client?id=pedcontroller)
 
 ## RP
 - `RP.TriggerServerCallback(name, cb, ...)` - Triggers a server callback
 - `RP.Teleport(x, y, z, heading?)` or `RP.Teleport(coords, heading?)` - Teleports the player
 - `RP.GetPlayerRank()` - Gets the player's rank from XP
-- `RP.RequestModel(modelHash: number|string, cb?)` - Requests a model and calls the cb function if provided
--- cb here is useless, it always blocks idk what i was thinking
+- `RP.RequestModel(modelHash: number|string, timeout?)` - Requests a model with a timeout (default 10000)
+-- Synchronous
+-- Returns false if model is invalid
 - `RP.RequestStreamedTextureDict(dict, cb?)` - Streams a texture dict and calls the callback function if provided
 -- Asynchronous (doesn't return object, only in callback and doesn't block execution)
 - `RP.RequestStreamedTextureDictSync(dict)` - Streams a texture dict
 -- Synchronous (returns object and blocks execution)
+- `RP.SpawnPed(model: string|number, coords, heading?, cb?)` - Spawns a ped and calls the callback function if provided
+-- Asynchronous (doesn't return ped, only in callback and doesn't block execution)
+-- Will load model if needed
+- `RP.SpawnPedSync(model: string|number, coords, heading?)` - Spawns a ped
+-- Synchronous (returns ped and blocks execution)
+-- Will load model if needed
 - `RP.SpawnObject(model: string|number, coords: vector3|table, cb?)` - Spawns an object and calls the callback function if provided
 -- Asynchronous (doesn't return object, only in callback and doesn't block execution)
 -- Will load model if needed
@@ -139,6 +147,55 @@ Base shared object
 -- `distance` - Preferred distance from `DistanceToPreferred`
 -- `longUnit` - true/false, if true will use longer units (m->meter(s), ft->(foot/feet))
 -- `precision` - How many numbers to keep after the floating point
+
+## PedController
+
+- Creates radius entitites that fade in/out when stepping in/out of the radius
+
+#### entityOptions (carOptions, pedOptions, objectOptions)
+
+| Name          | Type          | Description               |
+|---------------|---------------|---------------------------|
+| invincible    | bool          | Invincibility             |
+| freeze        | bool          | Freeze entity             |
+| blockEvents   | bool          | Block temporary events (peds)|
+| invisible     | bool          | Invisibility              |
+| noFade        | bool          | Don't fade entity         |
+| useFirstBoard | bool          | Use first model for the leaderboard|
+| useSecondBoard| bool          | Use second model for the leaderboard|
+| useThirdBoard | bool          | Use third model for the leaderboard|
+
+- the use<number>Board options are only used for leaderboard peds, if you have one or more leaderboard peds that can be on the screen at the same time, you need to use another number for each ped because the text will be shared between the boards (one scaleform)
+
+#### boardOptions (leaderboard peds)
+- An array with text for the board
+- If not defined, will be "N/A"
+| Name          | Type              | Description       |
+|---------------|-------------------|-------------------|
+| 1             | string            | First line        |
+| 2             | string            | Second line       |
+| 3             | string            | Third line        |
+
+- `onCreate(ent: number)` (car, ped, object) - Called when the entity is created (player steps into radius)
+- `onCreate(ped: number, updateBoard: func(boardOptions))` (leaderboard ped) - Same as above but with an additional parameter for the board
+- Example:
+```lua
+local id = RP.PedController.CreateRadiusLeaderboardPed(..., function(ped, updateBoard)
+    -- do whatever you want with the ped
+    updateBoard({"first line", "second line", "third line"})
+end, ...
+```
+
+- `RP.PedController.CreateRadiusPed(pos, radius, pedOptions?, onCreate?, onDespawn?)` - Creates a ped that only appears when the player is in radius
+-- Returns the radius entity ID
+- `RP.PedController.CreateRadiusLeaderboardPed(pos, radius, pedOptions?, onCreate?, onDespawn?)` - Creates a leaderboard ped that only appears when the player is in radius
+-- Spawns a ped that holds a sign like in the prison cutscenes with defined text
+-- Returns the radius entity ID
+- `RP.PedController.CreateRadiusCar(pos, radius, carOptions?, onCreate?, onDespawn?)` - Create a car that only appears when the player is in radius
+-- Returns the radius entity ID
+- `RP.PedController.CreateRadiusObject(pos, radius, objectOptions?, onCreate?, onDespawn?)` - Create an object that only appears when the player is in radius
+-- Returns the radius entity ID
+- `RP.DeleteRadiusEntity(id)` - Deletes the radius entity with the specified ID
 
 ## Events
 - `rp-base:setGroup` - Gets triggered when the user's group changes

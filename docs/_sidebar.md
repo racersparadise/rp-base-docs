@@ -22,3 +22,4 @@
 -- [Blips](rp_client.md?id=blips)
 -- [Converts](rp_client.md?id=converts)
 -- [Events](rp_client.md?id=events)
+-- [PedController](rp_client.md?id=pedcontroller)
