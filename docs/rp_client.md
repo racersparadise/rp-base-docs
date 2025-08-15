@@ -170,6 +170,7 @@ Base shared object
 #### boardOptions (leaderboard peds)
 - An array with text for the board
 - If not defined, will be "N/A"
+
 | Name          | Type              | Description       |
 |---------------|-------------------|-------------------|
 | 1             | string            | First line        |
