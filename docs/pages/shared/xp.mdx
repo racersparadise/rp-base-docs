@@ -14,15 +14,15 @@ player. Two conversion helpers are available on both **server** and **client**.
 Level from XP uses a **4th-root** curve so early levels are fast and later ones slow
 down naturally:
 
-$$
-\text{level} = \lfloor \text{xp}^{1/4} \rfloor
-$$
+```
+level = ⌊xp^(1/4)⌋
+```
 
 XP required to *reach* a given level is the inverse:
 
-$$
-\text{xp} = \lfloor \text{level}^{4} \rfloor
-$$
+```
+xp = ⌊level^4⌋
+```
 
 ---
 
