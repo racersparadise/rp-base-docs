@@ -1,0 +1,33 @@
+---
+title: rp-base
+---
+
+import { Cards, Card } from 'nextra/components'
+
+# rp-base
+
+**rp-base** is the core FiveM framework resource. It manages player sessions, accounts,
+metadata, server callbacks, vehicles, and exposes a shared `RP` object that all other
+resources import and use.
+
+## Feature overview
+
+| Area | What it provides |
+|------|-----------------|
+| **Player** | `RCPlayer` class — persistent DB-backed players with live dynamic props (ped, coords, state) |
+| **Vehicle** | `RCVehicle` class — DB-backed vehicle records with full CRUD |
+| **Accounts** | Per-player currency / balance buckets with automatic database sync |
+| **Metadata** | Arbitrary per-player key/value store with type-safe defaults and automatic DB sync |
+| **Callbacks** | Server callbacks (`RegisterServerCallback` / `TriggerServerCallback`) with resource lifecycle tracking |
+| **Client data** | Read-only `RP.PlayerData` proxy exposing the local player's loaded data with live dynamic props |
+| **Utilities** | Logging, math helpers, unit conversions, entity spawning, PedController |
+
+## Quick navigation
+
+<Cards>
+  <Card title="Getting Started" href="/getting-started" />
+  <Card title="Config Reference" href="/config" />
+  <Card title="Server API" href="/server/players" />
+  <Card title="Client API" href="/client/player-data" />
+  <Card title="Shared API" href="/shared/logging" />
+</Cards>

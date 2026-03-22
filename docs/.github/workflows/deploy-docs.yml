@@ -1,0 +1,49 @@
+name: Deploy Docs to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'resources/[core]/rp-base/docs-new/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'resources/[core]/rp-base/docs-new/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: resources/[core]/rp-base/docs-new
+        run: npm ci
+
+      - name: Build static site
+        working-directory: resources/[core]/rp-base/docs-new
+        # Replace YOUR_REPO_NAME with your GitHub repository name.
+        # e.g. if the site is at https://username.github.io/my-server-data/
+        # set DOCS_BASE_PATH to /my-server-data
+        # Leave empty or omit when using a custom domain.
+        env:
+          DOCS_BASE_PATH: /YOUR_REPO_NAME
+        run: npm run build
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: resources/[core]/rp-base/docs-new/out
+          # Adds a .nojekyll file so Next.js _next/ assets are served correctly
+          enable_jekyll: false

@@ -1,0 +1,109 @@
+---
+title: XP System
+---
+
+# XP System
+
+`rp-base` ships a simple level/rank system based on cumulative XP stored on the
+player. Two conversion helpers are available on both **server** and **client**.
+
+---
+
+## Formulas
+
+Level from XP uses a **4th-root** curve so early levels are fast and later ones slow
+down naturally:
+
+$$
+\text{level} = \lfloor \text{xp}^{1/4} \rfloor
+$$
+
+XP required to *reach* a given level is the inverse:
+
+$$
+\text{xp} = \lfloor \text{level}^{4} \rfloor
+$$
+
+---
+
+## Functions
+
+### `RP.GetLevelFromXP(xp)`
+
+Returns the level for the given XP amount.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `xp` | `number` | Current XP |
+
+**Returns** `integer`
+
+```lua
+RP.GetLevelFromXP(0)      -- 0
+RP.GetLevelFromXP(1)      -- 1
+RP.GetLevelFromXP(10000)  -- 10
+RP.GetLevelFromXP(160000) -- 20
+```
+
+### `RP.GetXPFromLevel(level)`
+
+Returns the total XP required to reach `level`.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `level` | `integer` | Target level |
+
+**Returns** `integer`
+
+```lua
+RP.GetXPFromLevel(1)   -- 1
+RP.GetXPFromLevel(10)  -- 10000
+RP.GetXPFromLevel(20)  -- 160000
+```
+
+---
+
+## Ranks
+
+Level is mapped to a rank using `Config.Ranks`. Levels are grouped into **buckets of
+10**, with 1–10 mapping to the first rank entry, 11–20 to the second, etc.
+
+```lua
+-- server: RCPlayer:getRank()
+-- client: RP.GetPlayerRank()
+```
+
+Both return the rank name string from `Config.Ranks` for the player's current level.
+
+```lua
+-- Config.Ranks example
+Config.Ranks = {
+    [1]  = "Newcomer",
+    [2]  = "Regular",
+    [3]  = "Veteran",
+    -- ...
+}
+```
+
+The rank index is calculated as:
+
+```lua
+math.ceil(math.max(1, math.min(#Config.Ranks, level / 10)))
+```
+
+---
+
+## Example: Granting XP
+
+XP is stored directly on the player's `xp` column. Update it via the accounts proxy
+(or direct SQL) then broadcast the change through the player loaded event or a
+dedicated event.
+
+```lua
+-- Server
+local p = RP.GetPlayerFromSource(src)
+if p then
+    p.xp = p.xp + 500
+    p:save()
+end
+```

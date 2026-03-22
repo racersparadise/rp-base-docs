@@ -1,0 +1,142 @@
+---
+title: Vehicles (RCVehicle)
+---
+
+import { Callout } from 'nextra/components'
+
+# Vehicles — `RCVehicle`
+
+`RCVehicle` is the server-side vehicle class backed by the `vehicles` database table.
+It represents a **stored** vehicle record, not a spawned entity.
+
+---
+
+## Lookup functions
+
+### `RP.GetVehicleById(id)`
+
+```lua
+--- @param id number  Database row ID
+--- @return RCVehicle?
+local v = RP.GetVehicleById(12)
+```
+
+### `RP.GetVehicleByPlate(plate)`
+
+```lua
+--- @param plate string
+--- @return RCVehicle?
+local v = RP.GetVehicleByPlate("RP1234")
+```
+
+### `RP.GetVehiclesByOwner(owner)`
+
+Returns all vehicles owned by a player. Accepts either a `pid` number or an `RCPlayer`.
+
+```lua
+--- @param owner number | RCPlayer
+--- @return RCVehicle[]
+local vehicles = RP.GetVehiclesByOwner(p)
+for _, v in ipairs(vehicles) do
+    print(v.plate, v.model)
+end
+```
+
+### `RP.CreateVehicle(owner, model, plate, data?)`
+
+Inserts a new vehicle row and returns the populated `RCVehicle`.
+
+```lua
+--- @param owner number | RCPlayer
+--- @param model string
+--- @param plate string
+--- @param data? table  Extra JSON data (default `{}`)
+--- @return RCVehicle?
+local v = RP.CreateVehicle(p, "adder", "RP1234", { color = 5 })
+```
+
+### `RP.SpawnVehicle(modelName, coords, heading, cb)`
+
+Spawns a **networked** vehicle entity in the world (does not create a DB record).
+
+```lua
+--- @param modelName string | number
+--- @param coords vector3
+--- @param heading number
+--- @param cb fun(veh: number)
+RP.SpawnVehicle("adder", vector3(0, 0, 70), 0.0, function(veh)
+    print("entity:", veh)
+end)
+```
+
+---
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `number` | Database row ID |
+| `owner` | `number` | Owner's `pid` |
+| `model` | `string` | Vehicle model name |
+| `plate` | `string` | License plate text |
+| `data` | `table` | Decoded JSON data blob (mods, color, etc.) |
+| `created_at` | `string` | DB creation timestamp |
+| `updated_at` | `string` | DB last-updated timestamp |
+
+---
+
+## Methods
+
+### `v:save(cb?)`
+
+Saves `model`, `plate`, and `data` to the database.
+
+```lua
+v.data.color = 3
+v:save(function() print("saved") end)
+```
+
+### `v:saveData(cb?)`
+
+More efficient variant — only persists `data` (skips model/plate).
+
+```lua
+v.data.mods = { engine = 3 }
+v:saveData()
+```
+
+### `v:delete()`
+
+Deletes the vehicle record from the database. Returns `true` on success.
+
+```lua
+if v:delete() then
+    print("Vehicle deleted")
+end
+```
+
+### `v:toTable()`
+
+Returns a plain serializable table representation of the vehicle.
+
+```lua
+local t = v:toTable()
+-- { id, owner, model, plate, data, created_at, updated_at }
+```
+
+---
+
+## Challenge leaderboards
+
+### `RP.UpdateChallengeScore(player, challenge, score, saveGreater)`
+
+Upserts a leaderboard entry for a challenge. Pass `saveGreater = true` to keep the
+highest score, or `false` (default) to keep the lowest (best lap time, etc.).
+
+```lua
+--- @param player number | RCPlayer  Source ID or RCPlayer
+--- @param challenge string  Challenge identifier
+--- @param score number
+--- @param saveGreater boolean
+RP.UpdateChallengeScore(p, "sprint_01", 92350, false)
+```

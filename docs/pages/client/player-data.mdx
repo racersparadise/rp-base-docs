@@ -1,0 +1,138 @@
+---
+title: Player Data
+---
+
+import { Callout } from 'nextra/components'
+
+# Player Data (Client)
+
+On the client side all player data is accessed through `RP.PlayerData` — a read-only
+metatable proxy backed by `RP._PlayerData`. The server pushes updates via the
+`_rp-base:update` net event; you never need to poll.
+
+---
+
+## `RP.PlayerData`
+
+The global player data proxy. Access it directly or listen for the load event.
+
+```lua
+-- After rp-base:playerLoaded fires, this is safe to access
+local pd = RP.PlayerData
+print(pd.pid)           -- database ID
+print(pd.username)      -- chosen username
+print(pd.coords)        -- current coords (live)
+print(pd.ped)           -- current ped handle (live)
+print(pd.xp)            -- current XP (from metadata)
+print(pd.playtime)      -- seconds this session + stored playtime (live)
+```
+
+<Callout type="warning">
+`RP.PlayerData` is **read-only**. Writing to any key raises an error, except for
+`coords` and `heading` which trigger `SetEntityCoords` / `SetEntityHeading`.
+
+To modify balances or metadata use `RP.TriggerServerCallback` or a server event —
+changes are pushed back down automatically.
+</Callout>
+
+---
+
+## Properties
+
+| Property | Type | Notes |
+|----------|------|-------|
+| `identifier` | `string` | License identifier |
+| `pid` | `number` | Database row ID |
+| `group` | `string` | Permission group |
+| `username` | `string` | Display name |
+| `discordpfp` | `string` | Discord avatar URL |
+| `last_vehicle` | `table?` | `{ model, plate, data }` of last stored vehicle |
+| **`ped`** *(live)* | `number` | ox_lib `cache.ped` or `GetPlayerPed(-1)` |
+| **`coords`** *(live)* | `vector3` | ox_lib `cache.coords` or entity coords |
+| **`heading`** *(live)* | `number` | Entity heading |
+| **`state`** *(live)* | `table` | `LocalPlayer.state` state bag |
+| **`xp`** *(live)* | `number` | `metadata.xp` |
+| **`sid`** *(live)* | `number` | Server ID (from ox_lib cache or `GetPlayerServerId`) |
+| **`playtime`** *(live)* | `number` | Elapsed session seconds + stored playtime |
+| `accounts` | proxy | Read-only account balances (see below) |
+| `metadata` | proxy | Read-only metadata (see below) |
+
+### Writable props
+
+```lua
+RP.PlayerData.coords  = vector3(0, 0, 70)  -- teleports ped
+RP.PlayerData.heading = 90.0               -- rotates ped
+```
+
+---
+
+## `RP.PlayerData.accounts`
+
+Read-only proxy over the client's cached account balances.
+
+```lua
+print(RP.PlayerData.accounts["credits"])
+-- writing raises an error — use a server callback to modify balances
+```
+
+---
+
+## `RP.PlayerData.metadata`
+
+Read-only proxy over the client's cached metadata.
+
+```lua
+local jumps = RP.PlayerData.metadata["stunt_jumps"]
+```
+
+---
+
+## Events
+
+### `rp-base:playerLoaded`
+
+Fired on the client when all player data has arrived from the server.
+
+```lua
+AddEventHandler('rp-base:playerLoaded', function()
+    local pd = RP.PlayerData
+    print('Loaded as', pd.username, '(pid', pd.pid .. ')')
+end)
+```
+
+<Callout>
+This event fires **after** `_rp-base:playerLoadedCB` is processed. It is safe to read
+all of `RP.PlayerData` inside this handler.
+</Callout>
+
+---
+
+## Helper functions
+
+### `RP.GetPlayerData()`
+
+Returns the raw `RP._PlayerData` table (plain, no metatable). Useful when you need to
+serialize or iterate all keys.
+
+```lua
+--- @return table
+local raw = RP.GetPlayerData()
+```
+
+### `RP.GetPlayerRank()`
+
+Returns the player's rank name based on their current XP.
+
+```lua
+--- @return string
+print(RP.GetPlayerRank())  -- "Drift King"
+```
+
+### `RP.Teleport(x, y, z, heading?)`
+
+Teleports the local player's ped. Accepts individual numbers or a `vector3`.
+
+```lua
+RP.Teleport(100.0, 200.0, 30.0)
+RP.Teleport(vector3(100.0, 200.0, 30.0), 90.0)
+```

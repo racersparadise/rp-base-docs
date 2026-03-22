@@ -1,0 +1,124 @@
+---
+title: Config Reference
+---
+
+import { Callout } from 'nextra/components'
+
+# Config Reference
+
+All configuration lives in `config.lua` and is exposed as the global `Config` table,
+available to all shared, server, and client scripts.
+
+---
+
+## `Config.Debug`
+
+```lua
+Config.Debug = true
+```
+
+When `true`, `RP.Log.debug(...)` calls print to the console. Set to `false` in production
+to reduce log noise.
+
+---
+
+## `Config.PopulationEnabled`
+
+```lua
+Config.PopulationEnabled = false
+```
+
+Passed to `SetRoutingBucketPopulationEnabled(0, ...)` on the default routing bucket.
+Disabling population removes ambient NPCs and traffic from the main world bucket.
+
+---
+
+## `Config.LockdownMode`
+
+```lua
+Config.LockdownMode = "relaxed"
+```
+
+Passed to `SetRoutingBucketEntityLockdownMode(0, ...)`. Controls which entities players
+can create in the default bucket. Accepted values: `"relaxed"`, `"strict"`, `"inactive"`.
+
+---
+
+## `Config.PlayerMetadata`
+
+```lua
+Config.PlayerMetadata = {
+    ["xp"] = { default = 0 },
+    ["stunt_jumps"] = { default = {} },
+}
+```
+
+Defines the metadata keys stored in `players.metadata` (JSON). Each entry requires a
+`default` value that is applied when a key is missing for an existing player.
+
+Keys can be read and written via `player.metadata[key]`. Writes sync to the database and
+to the client automatically.
+
+<Callout>
+Add new keys here before deploying — the `applyDefaults` logic fills missing keys on
+player load, so **no migration is needed** for new metadata fields.
+</Callout>
+
+---
+
+## `Config.PlayerAccounts`
+
+```lua
+Config.PlayerAccounts = {
+    ["credits"] = {
+        default = 0,
+        label = "Credits",
+        shortlabel = "CR",
+    },
+    ["tokens"] = {
+        default = 0,
+        label = "Ignition Points",
+        shortlabel = "IP",
+    },
+}
+```
+
+Defines currency / balance buckets stored in `players.accounts` (JSON). Each account
+requires `default`, `label`, and `shortlabel`. Read / write via `player.accounts[key]`.
+Writes sync to the DB and client.
+
+---
+
+## `Config.Ranks`
+
+```lua
+Config.Ranks = {
+    "Rookie", "Runner", "Racer", "Getaway Driver",
+    "Lightning Quick", "Drift King", "Professional",
+    "Master Racer", "Champion", "Legendary",
+}
+```
+
+Ordered list of rank names. The rank at index `i` corresponds to XP levels `(i-1)*10`
+through `i*10`. Retrieve a player's rank with `player:getRank()` (server) or
+`RP.GetPlayerRank()` (client).
+
+---
+
+## `Config.States`
+
+```lua
+Config.States = {
+    "HUB",        -- in the hub / lobby
+    "FREEROAM",   -- in open world
+    "RACING",     -- in an active race
+    "EVENT",      -- in a non-race event
+    "CUTSCENE",   -- watching a cutscene
+    "SPECTATING", -- spectating a race
+    "REPLAY",     -- watching a replay
+}
+```
+
+Valid values for `Player(src).state.state`. Changing a player's state bag triggers the
+`AddStateBagChangeHandler` in `server/main.lua` which automatically adjusts routing
+buckets (e.g. `HUB` → private bucket, `FREEROAM` → shared bucket 0).

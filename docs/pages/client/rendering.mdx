@@ -1,0 +1,138 @@
+---
+title: Rendering
+---
+
+# Rendering (Client)
+
+Helpers for drawing on-screen text in various styles, showing help prompts, and
+presenting a keyboard input dialog.
+
+---
+
+## 3D Text
+
+### `RP.DrawText3D(pos, text, scale?, color?)`
+
+Draws proportional text projected at a world position. Suitable for labels attached to
+props or map points.
+
+```lua
+--- @param pos   vector3 | {x,y,z}
+--- @param text  string
+--- @param scale? number   default 0.45
+--- @param color? number[] {r, g, b}
+Citizen.CreateThread(function()
+    while true do
+        Wait(0)
+        RP.DrawText3D(vector3(100, 200, 30), "~y~Checkpoint", 0.5, {255, 220, 0})
+    end
+end)
+```
+
+### `RP.DrawText3DNonProp(pos, text, scale?, color?)`
+
+Same as `DrawText3D` but scales inversely with camera distance and FOV so the text
+stays roughly the same size on screen regardless of zoom level.
+
+```lua
+Citizen.CreateThread(function()
+    while true do
+        Wait(0)
+        RP.DrawText3DNonProp(entityPos, playerName, 0.35)
+    end
+end)
+```
+
+---
+
+## 2D Text
+
+### `RP.DrawText(x, y, text, scale?, color?)`
+
+Draws text at a normalised screen position (`0.0` – `1.0`).
+
+```lua
+--- @param x     number  0.0 (left) – 1.0 (right)
+--- @param y     number  0.0 (top)  – 1.0 (bottom)
+--- @param color? number[] | {r,g,b}
+Citizen.CreateThread(function()
+    while true do
+        Wait(0)
+        RP.DrawText(0.5, 0.9, "Press ~INPUT_CONTEXT~ to interact")
+    end
+end)
+```
+
+---
+
+## Help text
+
+### `RP.ShowHelpText(text)`
+
+Displays a GTA-style help prompt in the top-left corner for the current frame. Call
+inside a `while` loop or a keybind `onPressed` handler.
+
+Accepts a plain string or a table of strings (each entry becomes a line).
+
+```lua
+-- single string
+RP.ShowHelpText("Press ~INPUT_CONTEXT~ to open shop")
+
+-- multiple segments
+RP.ShowHelpText({ "~INPUT_CONTEXT~", " Open shop" })
+```
+
+---
+
+## Keyboard
+
+### `RP.KeyBoard(prompt)`
+
+Opens the GTA on-screen keyboard with the given prompt and blocks until the player
+confirms or cancels. Returns the entered string, or `nil` on cancel.
+
+```lua
+--- @param prompt string  Label above the input field
+--- @return string?
+local result = RP.KeyBoard("Enter plate number")
+if result then
+    print("Entered:", result)
+end
+```
+
+---
+
+## Unit conversions
+
+These helpers return values formatted for the player's regional preferences (metric vs
+imperial), as set in GTA's settings.
+
+### `RP.Converts.PreferredDistanceUnit()` → `"m"` | `"ft"`
+### `RP.Converts.PreferredSpeedUnit()` → `"kmh"` | `"mph"`
+
+```lua
+local unit = RP.Converts.PreferredSpeedUnit()  -- "mph" or "kmh"
+```
+
+### `RP.Converts.SpeedToPreferred(speed)`
+
+Converts GTA's internal speed units to km/h or mph.
+
+```lua
+local speed = RP.Converts.SpeedToPreferred(GetEntitySpeed(veh))
+```
+
+### `RP.Converts.DistanceToPreferred(distance)`
+
+Converts metres to feet.
+
+### `RP.Converts.FormatPreferredDistance(distance, longUnit?, precision?)`
+
+Returns `distance, unitString` formatted for display.
+
+```lua
+local dist, unit = RP.Converts.FormatPreferredDistance(
+    #(GetEntityCoords(cache.ped) - targetPos)
+)
+print(("%.1f %s"):format(dist, unit))  -- "0.4 km" or "0.2 mi"
+```

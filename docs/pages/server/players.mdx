@@ -1,0 +1,234 @@
+---
+title: Players (RCPlayer)
+---
+
+import { Callout, Tabs } from 'nextra/components'
+
+# Players — `RCPlayer`
+
+`RCPlayer` is the server-side player class. It is stored in `RP.players[source]` and
+holds all DB-backed player data with live dynamic properties.
+
+<Callout type="warning">
+`RCPlayer` instances use a metatable. They **cannot be passed through events or exports**
+and still work — always pass the player's `source` or `pid` and re-fetch with one of
+the lookup functions.
+</Callout>
+
+---
+
+## Lookup functions
+
+### `RP.GetPlayerFromSource(src)`
+
+Returns the `RCPlayer` for a connected player, or `nil` if the player is not loaded.
+
+```lua
+--- @param src number  Server ID
+--- @return RCPlayer?
+local p = RP.GetPlayerFromSource(source)
+if p then
+    print(p.name, p.pid)
+end
+```
+
+### `RP.GetPlayerFromIdentifier(identifier)`
+
+Finds an online player by their license identifier string (e.g. `"license:abc123"`).
+
+```lua
+--- @param identifier string
+--- @return RCPlayer?
+local p = RP.GetPlayerFromIdentifier("license:abc123")
+```
+
+### `RP.GetPlayerFromPid(pid)`
+
+Finds an online player by their database ID.
+
+```lua
+--- @param pid number
+--- @return RCPlayer?
+local p = RP.GetPlayerFromPid(42)
+```
+
+### `RP.IsIdentifierOnline(identifier)`
+
+Returns `true, source` if the identifier is online, otherwise `false`.
+
+```lua
+--- @param identifier string | table  Single identifier or table of identifiers
+--- @return boolean online, number? source
+local online, src = RP.IsIdentifierOnline("license:abc123")
+```
+
+### `RP.IsPidOnline(pid)`
+
+Returns `true, source` if a player with that database ID is online.
+
+```lua
+--- @param pid number
+--- @return boolean online, number? source
+local online, src = RP.IsPidOnline(42)
+```
+
+---
+
+## Properties
+
+All properties can be read directly from the player object. Dynamic properties are
+computed on access — they are never stale.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `source` | `number` | FiveM server ID |
+| `identifier` | `string` | License identifier (`license:...`) |
+| `pid` | `number` | Database row ID |
+| `group` | `string` | Permission group (`"user"`, `"admin"`, …) |
+| `name` | `string` | Rockstar / game name |
+| `username` | `string` | Chosen display name |
+| `discordpfp` | `string` | Discord avatar URL |
+| `last_vehicle` | `string?` | Plate of the last stored vehicle |
+| **`ped`** *(dynamic)* | `number` | Current ped entity handle |
+| **`coords`** *(dynamic)* | `vector3` | Current world coordinates |
+| **`heading`** *(dynamic)* | `number` | Current entity heading |
+| **`state`** *(dynamic)* | `table` | `Player(src).state` state bag |
+| **`xp`** *(dynamic)* | `number` | Shorthand for `metadata.xp` |
+| **`playtime`** *(dynamic)* | `number` | Seconds online this session + stored playtime |
+| `accounts` | `RCAccounts` | Account balances (see below) |
+| `metadata` | `RCMetadata` | Metadata key/value store (see below) |
+
+### Writing special properties
+
+```lua
+-- Teleports ped to new coords (vector3 required)
+p.coords = vector3(0.0, 0.0, 70.0)
+
+-- Writes to DB + syncs to client
+p.group = "admin"
+
+-- Shorthand for p.metadata.xp = val
+p.xp = 500
+```
+
+---
+
+## Accounts — `RCAccounts`
+
+Accounts are indexed like a table. Reads are backed by the in-memory store; writes
+persist to the database and sync to the player's client.
+
+```lua
+local balance = p.accounts["credits"]    -- read
+p.accounts["credits"] = balance + 100   -- write → DB + client sync
+```
+
+#### Iterating accounts
+
+```lua
+for key, amount in pairs(p.accounts) do
+    print(key, amount)
+end
+```
+
+#### Converting to a plain table
+
+```lua
+local t = p.accounts:toTable()
+```
+
+---
+
+## Metadata — `RCMetadata`
+
+Same interface as accounts: index-read, index-write, `pairs`, and `:toTable()`.
+
+```lua
+local jumps = p.metadata["stunt_jumps"]  -- read
+p.metadata["stunt_jumps"] = jumps        -- write → DB + client sync
+```
+
+---
+
+## Methods
+
+### `p:kick(reason?)`
+
+Drops the player from the server.
+
+```lua
+p:kick("You have been banned.")
+```
+
+### `p:triggerEvent(eventName, ...)`
+
+Fires a client event on this player.
+
+```lua
+p:triggerEvent("myResource:hello", "world")
+```
+
+### `p:setCoords(x, y, z, heading?)` / `p:teleport(...)`
+
+Teleports the player's ped. Accepts either individual numbers or a `vector3`/table.
+
+```lua
+p:setCoords(100.0, 200.0, 30.0)
+p:setCoords(vector3(100.0, 200.0, 30.0), 90.0)
+p:teleport(100.0, 200.0, 30.0, 90.0)  -- alias
+```
+
+### `p:save(cb?)`
+
+Persists `playtime` to the database. The optional callback fires after the query.
+
+```lua
+p:save(function() print("saved") end)
+```
+
+### `p:showNotification(msg, delay?)`
+
+Triggers `rp-notify:notify` on the player's client.
+
+```lua
+p:showNotification("Race starting in 10 seconds!", 5000)
+```
+
+### `p:hasDoneStuntJump(id)`
+
+Returns `true` if stunt jump `id` is recorded in `metadata.stunt_jumps`.
+
+```lua
+if p:hasDoneStuntJump(3) then ... end
+```
+
+### `p:getRank()`
+
+Returns the player's rank name derived from their XP level.
+
+```lua
+print(p:getRank())  -- "Drift King"
+```
+
+### `p:GetDiscordPfp()`
+
+Fetches the latest Discord avatar URL from `rp-queue` and updates the stored value.
+
+```lua
+local url = p:GetDiscordPfp()
+```
+
+---
+
+## Internal helpers (used by the framework)
+
+| Function | Description |
+|----------|-------------|
+| `RP.IndexPlayer(src, key, val?)` | Read or write a property on the player by source ID |
+| `RP.IndexPlayerMetadata(src, key, val?)` | Read or write a metadata key by source ID |
+| `RP.IndexPlayerAccounts(src, key, val?)` | Read or write an account balance by source ID |
+| `RP.RunStaticPlayerFunction(src, method, ...)` | Call any `RCPlayer` method by name |
+| `RP.RunStaticPlayerAccountFunction(src, method, ...)` | Call an `RCAccounts` method by name |
+
+These are primarily used by `import.lua` to forward property accesses through the
+lightweight proxy it creates for external resources.

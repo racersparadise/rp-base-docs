@@ -1,0 +1,117 @@
+---
+title: Server Callbacks
+---
+
+import { Callout, Tabs } from 'nextra/components'
+
+# Server Callbacks
+
+Server callbacks are the primary way client-side code requests data from the server and
+receives a response in a single round-trip.
+
+---
+
+## Registering a callback (server)
+
+### `RP.RegisterServerCallback(name, handler)`
+
+Registers a named callback. The handler receives `(source, cb, ...args)` where `cb` must
+be called to send the response back to the client.
+
+```lua
+--- @param name string      Unique callback name
+--- @param handler fun(src: number, cb: fun(...), ...)
+RP.RegisterServerCallback('myResource:getPlayerInfo', function(src, cb, extraArg)
+    local p = RP.GetPlayerFromSource(src)
+    if not p then return cb(nil) end
+    cb({
+        pid      = p.pid,
+        username = p.username,
+        rank     = p:getRank(),
+        xp       = p.xp,
+        extra    = extraArg,
+    })
+end)
+```
+
+<Callout type="info">
+Callbacks are automatically unregistered when the resource that registered them stops.
+After a `rp-base` restart they are re-registered automatically (handled by `import.lua`).
+</Callout>
+
+<Callout type="warning">
+Registering a callback name that already exists logs a warning and the second
+registration is **ignored**. Use namespaced names like `resourceName:callbackName` to
+avoid collisions.
+</Callout>
+
+---
+
+## Triggering a callback (client)
+
+### `RP.TriggerServerCallback(name, cb, ...)`
+
+Fires the named server callback and calls `cb` when the server responds.
+
+```lua
+--- @param name string
+--- @param cb  fun(...)  Response handler
+--- @vararg any          Arguments forwarded to the server handler
+RP.TriggerServerCallback('myResource:getPlayerInfo', function(data)
+    if not data then return end
+    print('Username:', data.username)
+    print('Rank:', data.rank)
+end, "someExtraArg")
+```
+
+---
+
+## Full example
+
+<Tabs items={['Server', 'Client']}>
+  <Tabs.Tab>
+```lua
+-- server/callbacks.lua
+RP.RegisterServerCallback('shop:getBalance', function(src, cb)
+    local p = RP.GetPlayerFromSource(src)
+    cb(p and p.accounts['credits'] or 0)
+end)
+
+RP.RegisterServerCallback('shop:purchase', function(src, cb, itemId, price)
+    local p = RP.GetPlayerFromSource(src)
+    if not p then return cb(false, 'Not loaded') end
+
+    local bal = p.accounts['credits']
+    if bal < price then return cb(false, 'Insufficient funds') end
+
+    p.accounts['credits'] = bal - price
+    -- grant item ...
+    cb(true, 'Purchase successful')
+end)
+```
+  </Tabs.Tab>
+  <Tabs.Tab>
+```lua
+-- client/shop.lua
+RP.TriggerServerCallback('shop:getBalance', function(bal)
+    print('Current balance:', bal)
+end)
+
+RP.TriggerServerCallback('shop:purchase', function(ok, msg)
+    print(ok and '✓' or '✗', msg)
+end, 'helmet', 500)
+```
+  </Tabs.Tab>
+</Tabs>
+
+---
+
+## How it works internally
+
+1. Client fires `_rp-base:triggerCallback` net event with the callback name and a
+   sequential numeric ID.
+2. Server looks up the handler in `RP._cbs` and calls it with `(source, respondFn, ...args)`.
+3. `respondFn` fires `_rp-base:callback` back to the client with the same ID.
+4. Client resolves the pending callback by ID and calls the user's `cb`.
+5. If the callback name is not found the server fires back a **negative** ID — the client
+   discards the pending entry cleanly.

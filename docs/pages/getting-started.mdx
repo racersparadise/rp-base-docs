@@ -1,0 +1,96 @@
+---
+title: Getting Started
+---
+
+import { Callout, Steps, Tabs } from 'nextra/components'
+
+# Getting Started
+
+## Prerequisites
+
+- FiveM server with `ox_lib` and `oxmysql` in your resource manifest
+- `rp-base` started **before** any resource that imports it
+
+## Installation
+
+Copy `rp-base` into your resources folder and add it to your `server.cfg`:
+
+```cfg
+ensure ox_lib
+ensure oxmysql
+ensure rp-base
+```
+
+Run `database.sql` against your database to create the required tables.
+
+## Importing in another resource
+
+Add the import file to your `fxmanifest.lua`:
+
+```lua filename="fxmanifest.lua"
+shared_scripts {
+    '@rp-base/import.lua',
+    -- your other scripts
+}
+```
+
+The import script:
+- Waits for `rp-base` to start (handles cold starts and restarts alike)
+- Attaches the shared `RP` object to the global
+- Sets up side-specific helpers (`RP.PlayerData` on the client, `RP.GetPlayerFromSource` etc. on the server)
+- Re-registers server callbacks automatically after a `rp-base` restart
+
+<Callout type="info">
+`import.lua` works for both **server-side** and **client-side** scripts in the same
+resource — `IsDuplicityVersion()` is checked internally.
+</Callout>
+
+## Basic usage
+
+<Tabs items={['Server', 'Client']}>
+  <Tabs.Tab>
+```lua
+-- server/main.lua
+RP.RegisterServerCallback('myResource:getData', function(src, cb)
+    local p = RP.GetPlayerFromSource(src)
+    if not p then return cb(nil) end
+    cb({ pid = p.pid, xp = p.xp, rank = p:getRank() })
+end)
+
+AddEventHandler('rp-base:playerLoaded', function(p)
+    -- p is the raw _PlayerData table forwarded from the server
+    print('Player loaded:', p.pid)
+end)
+```
+  </Tabs.Tab>
+  <Tabs.Tab>
+```lua
+-- client/main.lua
+AddEventHandler('rp-base:playerLoaded', function()
+    local pd = RP.PlayerData
+    print('My PID:', pd.pid)
+    print('My XP:', pd.xp)
+    print('My coords:', pd.coords)
+
+    RP.TriggerServerCallback('myResource:getData', function(data)
+        if data then print('Rank:', data.rank) end
+    end)
+end)
+```
+  </Tabs.Tab>
+</Tabs>
+
+## Metatables and exports
+
+<Callout type="warning">
+Metatables **do not survive** FiveM's event or export boundaries. This means:
+
+- You **cannot** pass an `RCPlayer` object through a `TriggerEvent` or `exports` call
+  and expect dynamic props like `p.ped` to work on the receiving end.
+- Always pass plain data (pid, source, tables) and re-fetch the player object inside
+  the handler using `RP.GetPlayerFromSource(src)`.
+</Callout>
+
+The import's server-side `RP.GetPlayerFromSource` returns a **lightweight proxy** (not
+the real `RCPlayer`) that forwards property reads/writes through exports. This is safe to
+pass as a local variable within a single resource.

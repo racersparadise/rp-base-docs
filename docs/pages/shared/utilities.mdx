@@ -1,0 +1,114 @@
+---
+title: Utilities
+---
+
+# Utilities
+
+`RP.Util` is a namespace of small helper functions available on both **server** and
+**client**.
+
+---
+
+## `RP.Util.RoundFloat(num, prec)`
+
+Rounds `num` to `prec` decimal places.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `num` | `number` | Value to round |
+| `prec` | `integer` | Decimal places |
+
+**Returns** `number`
+
+```lua
+RP.Util.RoundFloat(3.14159, 2) -- 3.14
+```
+
+---
+
+## `RP.Util.Trim(value)`
+
+Strips leading and trailing whitespace from a string. Returns `nil` if `value` is
+`nil` or an empty string after trimming.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `value` | `string?` | Input value |
+
+**Returns** `string?`
+
+```lua
+RP.Util.Trim("  hello  ")  -- "hello"
+RP.Util.Trim("   ")        -- nil
+```
+
+---
+
+## `RP.Util.RandomString(length)`
+
+Generates a cryptographically random alphanumeric string of the given length.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `length` | `integer` | Desired string length |
+
+**Returns** `string`
+
+```lua
+local token = RP.Util.RandomString(8) -- e.g. "aK7mPq3z"
+```
+
+---
+
+## `RP.Util.GroupDigits(num)`
+
+Formats a number with thousands separators (commas).
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `num` | `number` | Value to format |
+
+**Returns** `string`
+
+```lua
+RP.Util.GroupDigits(1234567)  -- "1,234,567"
+RP.Util.GroupDigits(9999)     -- "9,999"
+```
+
+---
+
+## `RP.Util.GetDistance(v1, v2, useZ?)`
+
+Euclidean distance between two `vector3` (or compatible table) values.
+Pass `useZ = false` to compute a flat 2-D distance.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `v1` | `vector3` | First position |
+| `v2` | `vector3` | Second position |
+| `useZ` | `boolean?` | Include Z axis (default `true`) |
+
+**Returns** `number`
+
+```lua
+local dist = RP.Util.GetDistance(coords1, coords2)
+local dist2d = RP.Util.GetDistance(coords1, coords2, false)
+```
+
+---
+
+## `RP.Util.Split(str, sep)`
+
+Splits `str` into an array of substrings using `sep` as a single-character delimiter.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `str` | `string` | String to split |
+| `sep` | `string` | Single-character separator |
+
+**Returns** `string[]`
+
+```lua
+local parts = RP.Util.Split("steam:110000112345678:license:abc", ":")
+-- { "steam", "110000112345678", "license", "abc" }
+```

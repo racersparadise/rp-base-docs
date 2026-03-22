@@ -1,0 +1,69 @@
+---
+title: Logging
+---
+
+# Logging
+
+`RP.Log` provides coloured console output available on both **server** and **client**.
+Debug output is gated behind `Config.Debug`.
+
+---
+
+## Functions
+
+### `RP.Log.info(msg, ...)`
+
+General informational message. Printed in white with a blue `[RP]` prefix.
+
+```lua
+RP.Log.info("Player loaded:", p.name)
+```
+
+### `RP.Log.warning(msg, ...)`
+
+Non-fatal warning. Printed with a yellow `[RP]` prefix.
+
+```lua
+RP.Log.warning("Callback `" .. name .. "` already exists!")
+```
+
+### `RP.Log.error(msg, ...)`
+
+Error message. Printed with a red `[RP]` prefix.
+
+```lua
+RP.Log.error("Failed to load vehicle:", vehId)
+```
+
+### `RP.Log.debug(msg, ...)`
+
+Only prints when `RP.Debug` is `true` (`Config.Debug`). Printed with a purple `[RP]`
+prefix.
+
+```lua
+RP.Log.debug("Registered callback", name, "for", invoker)
+```
+
+### `RP.Log.custom(...)`
+
+Prints with the **current resource name** as prefix, no level colouring.
+
+```lua
+RP.Log.custom("Race started:", raceName)
+-- output: [my-race-resource]  Race started: Sprint 01
+```
+
+---
+
+## Colour reference
+
+FiveM console colour codes used internally:
+
+| Code | Colour |
+|------|--------|
+| `^1` | Red |
+| `^2` | Green |
+| `^3` | Yellow |
+| `^4` | Blue |
+| `^7` | White (reset) |
+| `^9` | Purple |

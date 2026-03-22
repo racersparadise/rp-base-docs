@@ -1,0 +1,100 @@
+---
+title: Vehicle Properties
+---
+
+# Vehicle Properties (Client)
+
+`RP.GetVehicleProperties` and `RP.SetVehicleProperties` provide a complete snapshot of
+a vehicle's visual and performance state in a serializable table.
+
+---
+
+## `RP.GetVehicleProperties(vehicle)`
+
+Returns a `VehicleProperties` table for the given entity, or `nil` if the entity does
+not exist.
+
+```lua
+--- @param vehicle number  Entity handle
+--- @return VehicleProperties?
+local props = RP.GetVehicleProperties(veh)
+if props then
+    print(props.plate, props.color1, props.modEngine)
+end
+```
+
+---
+
+## `RP.SetVehicleProperties(vehicle, props)`
+
+Applies a previously captured (or manually constructed) properties table to a vehicle.
+Only present keys are applied — missing keys leave the vehicle unchanged.
+
+```lua
+--- @param vehicle number
+--- @param props   VehicleProperties
+RP.SetVehicleProperties(veh, props)
+```
+
+---
+
+## `VehicleProperties` fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `model` | `number` | Entity model hash |
+| `plate` | `string` | Plate text |
+| `plateIndex` | `number` | Plate style (0–5) |
+| `bodyHealth` | `number` | Body health (0–1000) |
+| `engineHealth` | `number` | Engine health (0–1000) |
+| `tankHealth` | `number` | Petrol tank health (0–1000) |
+| `fuelLevel` | `number` | Fuel level (0–100) |
+| `dirtLevel` | `number` | Dirt level (0–15) |
+| `color1` | `number` | Primary paint index |
+| `color2` | `number` | Secondary paint index |
+| `pearlescentColor` | `number` | Pearlescent paint index |
+| `wheelColor` | `number` | Wheel colour index |
+| `wheels` | `number` | Wheel type |
+| `windowTint` | `number` | Window tint (0–6) |
+| `xenonColor` | `number` | Xenon headlight colour |
+| `neonEnabled` | `boolean[4]` | Neon lights enabled per side |
+| `neonColor` | `number[3]` | Neon RGB colour |
+| `tyreSmokeColor` | `number[3]` | Tyre smoke RGB colour |
+| `extras` | `table<string, boolean>` | Extra slot states (key = `tostring(id)`) |
+| `modSpoilers` … `modWindows` | `number` | Individual mod slots (0–24 etc.) |
+| `modTurbo` | `boolean` | Turbo toggle |
+| `modXenon` | `boolean` | Xenon toggle |
+| `modSmokeEnabled` | `boolean` | Tyre smoke toggle |
+| `modLivery` | `number` | Livery index |
+
+---
+
+## Example: save and restore
+
+```lua
+-- Save props before a race
+local savedProps = RP.GetVehicleProperties(veh)
+
+-- ... race happens, vehicle may get damaged ...
+
+-- Restore afterwards
+RP.SetVehicleProperties(veh, savedProps)
+```
+
+## Example: store in RCVehicle.data
+
+```lua
+-- Server callback to save vehicle appearance
+RP.RegisterServerCallback('garage:save', function(src, cb, plate, props)
+    local v = RP.GetVehicleByPlate(plate)
+    if not v then return cb(false) end
+    v.data.props = props
+    v:saveData()
+    cb(true)
+end)
+
+-- Client side
+RP.TriggerServerCallback('garage:save', function(ok)
+    print(ok and "Saved!" or "Failed")
+end, RP.Util.Trim(GetVehicleNumberPlateText(veh)), RP.GetVehicleProperties(veh))
+```

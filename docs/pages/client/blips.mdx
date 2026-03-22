@@ -1,0 +1,129 @@
+---
+title: Blip Info System
+---
+
+# Blip Info System (Client)
+
+`RP.Blips` provides GTA's mission-creator-style info panel that appears when hovering
+over a blip on the pause-map. It mirrors the scaleform functions used by Rockstar for
+mission blips.
+
+---
+
+## Setup workflow
+
+```lua
+-- 1. Create a blip as normal
+local blip = AddBlipForCoord(100.0, 200.0, 30.0)
+SetBlipSprite(blip, 1)
+SetBlipColour(blip, 5)
+SetBlipAsShortRange(blip, true)
+
+-- 2. Configure its info panel
+RP.Blips.SetBlipInfoTitle(blip, "Sprint Race", false)
+RP.Blips.SetBlipInfoEconomy(blip, "500 XP", "$1,000")
+RP.Blips.SetBlipInfoImage(blip, "mphud", "mph_blip_race_sprint")
+
+RP.Blips.SetBlipInfo(blip, {})  -- clears previous entries then:
+RP.Blips.AddBlipInfoText(blip, "Distance", "2.4 km")
+RP.Blips.AddBlipInfoText(blip, "Best lap",  "1:23.456")
+RP.Blips.AddBlipInfoIcon(blip, "Difficulty", "Easy", 84, 69, true)
+
+-- 3. Optionally draw a multi-point GPS route
+RP.Blips.SetBlipPath(blip, {
+    vector3(100, 200, 30),
+    vector3(150, 250, 31),
+})
+```
+
+---
+
+## Function reference
+
+### Title & header
+
+#### `RP.Blips.SetBlipInfoTitle(blip, title, rockstarVerified?)`
+
+Sets the main title shown at the top of the info panel.
+
+```lua
+RP.Blips.SetBlipInfoTitle(blip, "Sprint Race", false)
+```
+
+#### `RP.Blips.SetBlipInfoImage(blip, dict, tex)`
+
+Sets the thumbnail image (texture dictionary + texture name).
+
+#### `RP.Blips.SetBlipInfoEconomy(blip, rp, money)`
+
+Sets the RP / money reward strings shown below the title.
+
+---
+
+### Info rows
+
+#### `RP.Blips.SetBlipInfo(blip, info)`
+
+Replaces all existing info rows with a pre-built table. Each entry is
+`{type, leftText, rightText, ...}`.
+
+#### `RP.Blips.AddBlipInfoText(blip, leftText, rightText?)`
+
+Appends a key/value text row. Omit `rightText` for a full-width label.
+
+```lua
+RP.Blips.AddBlipInfoText(blip, "Laps", "3")
+RP.Blips.AddBlipInfoText(blip, "~y~Tip: use shortcuts!")
+```
+
+#### `RP.Blips.AddBlipInfoName(blip, leftText, rightText?)`
+
+Appends a name-style row (style 3).
+
+#### `RP.Blips.AddBlipInfoHeader(blip, leftText, rightText?)`
+
+Appends a header-style row (style 4).
+
+#### `RP.Blips.AddBlipInfoIcon(blip, leftText, rightText, iconId, iconColor, checked?)`
+
+Appends a row with a check-box icon.
+
+```lua
+RP.Blips.AddBlipInfoIcon(blip, "Requirement", "Rank 5+", 84, 69, playerMeetsRequirement)
+```
+
+---
+
+### GPS path
+
+#### `RP.Blips.SetBlipPath(blip, path)`
+
+Stores a table of `vector3` waypoints. When the player hovers the blip, a multi-point
+GPS route is drawn on the map.
+
+```lua
+RP.Blips.SetBlipPath(blip, {
+    vector3(100, 200, 30),
+    vector3(200, 300, 35),
+    vector3(350, 400, 40),
+})
+```
+
+Pass an empty string or `nil` to clear the route.
+
+---
+
+### `RP.Blips.ensureBlipInfo(blip)`
+
+Initialises and returns the info data table for a blip, creating defaults if it doesn't
+exist yet. All `Set*` and `Add*` functions call this internally.
+
+---
+
+## How it works
+
+`rp-base:main.lua` runs a permanent loop on the client that:
+1. Watches `IsHoveringOverMissionCreatorBlip()` on the pause map.
+2. When hovering, reads `RP.Blips.BLIP_INFO_DATA[blip]` and pushes all stored data into
+   the scaleform movie using `SET_COLUMN_TITLE`, `SET_DATA_SLOT`, etc.
+3. Shows or hides the panel and manages the GPS multi-route automatically.

@@ -1,0 +1,121 @@
+---
+title: Entity Spawning
+---
+
+# Entity Spawning (Client)
+
+All spawn functions handle model loading automatically. Async variants use
+`Citizen.CreateThread` internally; sync variants block the current thread until the
+entity is ready.
+
+---
+
+## Models
+
+### `RP.RequestModel(modelHash, timeout?)`
+
+Requests and waits for a model to load. Returns `true` on success, `false` on timeout.
+
+```lua
+--- @param modelHash number | string
+--- @param timeout?  number  ms, default 10000
+--- @return boolean
+if RP.RequestModel("adder") then
+    -- safe to use the model
+end
+```
+
+### `RP.RequestStreamedTextureDict(dict, cb?)`
+
+Asynchronously streams a texture dictionary, then calls `cb`.
+
+```lua
+RP.RequestStreamedTextureDict("commonmenu", function()
+    -- ready
+end)
+```
+
+### `RP.RequestStreamedTextureDictSync(dict)`
+
+Synchronous variant — blocks the thread.
+
+```lua
+RP.RequestStreamedTextureDictSync("commonmenu")
+```
+
+---
+
+## Peds
+
+### `RP.SpawnPed(model, coords, heading?, cb?)`
+
+```lua
+RP.SpawnPed("a_m_y_hipster_01", vector3(100, 200, 30), 0.0, function(ped)
+    SetBlockingOfNonTemporaryEvents(ped, true)
+end)
+```
+
+### `RP.SpawnPedSync(model, coords, heading?)`
+
+Returns the ped handle directly.
+
+```lua
+local ped = RP.SpawnPedSync("a_m_y_hipster_01", vector3(100, 200, 30))
+```
+
+---
+
+## Objects
+
+Both networked (`CreateObject` with `networked=true`) and local (`networked=false`)
+variants are available.
+
+| Function | Networked | Async |
+|----------|-----------|-------|
+| `RP.SpawnObject(model, coords, cb?)` | ✓ | ✓ |
+| `RP.SpawnObjectSync(model, coords)` | ✓ | ✗ |
+| `RP.SpawnLocalObject(model, coords, cb?)` | ✗ | ✓ |
+| `RP.SpawnLocalObjectSync(model, coords)` | ✗ | ✗ |
+
+```lua
+local obj = RP.SpawnObjectSync("prop_barrier_work05", vector3(100, 200, 30))
+
+RP.SpawnLocalObject("prop_barrier_work05", vector3(100, 200, 30), function(obj)
+    FreezeEntityPosition(obj, true)
+end)
+```
+
+### `RP.DeleteObject(object)`
+
+Marks the entity as not needed and deletes it.
+
+```lua
+RP.DeleteObject(obj)
+```
+
+---
+
+## Vehicles
+
+All vehicle spawners set the standard flags (mission entity, owned, no hotwire, radio off).
+
+| Function | Networked | Async |
+|----------|-----------|-------|
+| `RP.SpawnVehicle(model, coords, heading, cb?)` | ✓ | ✓ |
+| `RP.SpawnVehicleSync(model, coords, heading)` | ✓ | ✗ |
+| `RP.SpawnLocalVehicle(model, coords, heading, cb?)` | ✗ | ✓ |
+| `RP.SpawnLocalVehicleSync(model, coords, heading)` | ✗ | ✗ |
+
+```lua
+RP.SpawnVehicle("adder", vector3(100, 200, 30), 0.0, function(veh)
+    SetPedIntoVehicle(cache.ped, veh, -1)
+end)
+
+local veh = RP.SpawnVehicleSync("adder", vector3(100, 200, 30), 0.0)
+```
+
+### `RP.DeleteVehicle(vehicle)`
+
+```lua
+RP.DeleteVehicle(veh)
+```

@@ -1,0 +1,116 @@
+---
+title: PedController
+---
+
+import { Callout } from 'nextra/components'
+
+# PedController (Client)
+
+`RP.PedController` manages **radius-based entities** — peds, vehicles, and objects that
+are automatically spawned when the player comes within range and despawned when they
+leave. An internal thread polls every 500 ms.
+
+Entities created by a resource are auto-cleaned up when that resource stops.
+
+---
+
+## Creating radius entities
+
+### `RP.PedController.CreateRadiusPed(pos, radius, pedOptions, onCreate?, onDespawn?)`
+
+```lua
+--- @param pos        vector3
+--- @param radius     number   metres, default 15
+--- @param pedOptions table    see options below
+--- @param onCreate?  fun(ped: number)
+--- @param onDespawn? fun(ped: number)
+--- @return number id  handle used to delete the entry
+local id = RP.PedController.CreateRadiusPed(
+    vector3(100, 200, 30),
+    20.0,
+    {
+        model    = "a_m_y_hipster_01",
+        heading  = 180.0,
+        invincible = true,
+        blockEvents = true,
+        freeze   = false,
+    },
+    function(ped)
+        TaskStartScenarioInPlace(ped, "WORLD_HUMAN_STAND_MOBILE", 0, true)
+    end,
+    function(ped)
+        print("ped despawned", ped)
+    end
+)
+```
+
+### `RP.PedController.CreateRadiusCar(pos, radius, carOptions, onCreate?, onDespawn?)`
+
+Same interface — spawns a local (non-networked) vehicle.
+
+### `RP.PedController.CreateRadiusObject(pos, radius, objectOptions, onCreate?, onDespawn?)`
+
+Spawns a local object.
+
+### `RP.PedController.CreateRadiusLeaderboardPed(pos, radius, pedOptions, onCreate?, onDespawn?)`
+
+Special variant that attaches a leaderboard prop (`prop_police_id_board`) to the ped and
+draws a scaleform mugshot board. Used for showing podium-style leaderboard displays in
+the world.
+
+```lua
+RP.PedController.CreateRadiusLeaderboardPed(
+    vector3(100, 200, 30),
+    25.0,
+    {
+        model = "a_m_y_hipster_01",
+        heading = 0.0,
+        useFirstBoard = true,
+        leaderboardMarkerPos = vector3(100, 196, 30),
+    },
+    function(ped, setBoardData)
+        setBoardData({ "PlayerName", "#1", "1:23.456" })
+    end
+)
+```
+
+---
+
+## Removing radius entities
+
+### `RP.PedController.DeleteRadiusEntity(id)`
+
+```lua
+RP.PedController.DeleteRadiusEntity(id)
+```
+
+---
+
+## Entity options
+
+All entity types share these options:
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `model` | `string \| number` | Model name or hash **(required)** |
+| `heading` | `number` | Spawn heading (default `0`) |
+| `invincible` / `godmode` | `boolean` | Calls `SetEntityInvincible(true)` |
+| `freeze` | `boolean` | Calls `FreezeEntityPosition(true)` |
+| `blockEvents` | `boolean` | Peds only — `SetBlockingOfNonTemporaryEvents(true)` |
+| `invisible` | `boolean` | `SetEntityVisible(false)` |
+| `nofade` | `boolean` | Skip the fade-in/fade-out animation |
+| `fadeTime` | `number` | Custom fade duration in ms (default `900`) |
+
+`leaderboardPed` additional options:
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `useFirstBoard` | `boolean` | Use `mugshot_board_01` |
+| `useSecondBoard` | `boolean` | Use `mugshot_board_02` |
+| `useThirdBoard` | `boolean` | Use `mugshot_board_03` |
+| `leaderboardMarkerPos` | `vector3` | Position of the floor arrow marker |
+
+<Callout>
+If the model fails to load, the entry is **automatically removed** from the controller
+and `RP.Log.error` is called. Check your console for model name typos.
+</Callout>
